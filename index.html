@@ -220,7 +220,7 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
       <div class="sccard">
         <div class="sctit">Escanear QR del invitado</div>
         <canvas id="qrCanvas" style="display:none"></canvas>
-        <input type="file" id="qrInput" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto(this)" />
+        <input type="file" id="qrInput" accept="image/*" capture="environment" style="display:none" />
         <button class="scbtn" onclick="document.getElementById('qrInput').click()">📷 Escanear QR con cámara</button>
         <div style="font-size:12px;color:var(--ink-light);text-align:center;margin-top:-4px;margin-bottom:10px;">Apunta la cámara al QR del invitado y toma la foto</div>
         <div class="sr plain" id="scanResult" style="display:none">
@@ -585,6 +585,11 @@ function switchTab(id,btn){
   document.getElementById('sec-'+id).classList.add('active');
   btn.classList.add('active');
 }
+
+// Bind QR input con addEventListener (más confiable en iOS)
+document.getElementById('qrInput').addEventListener('change', function(){
+  if(this.files && this.files[0]) procesarFoto(this);
+});
 
 // Auto-refresh resumen cada 30s
 setInterval(function(){
