@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Zhima Planners — Check-in</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Quicksand:wght@400;500;600;700&family=Cormorant+Garamond:wght@700&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+:root{--rose:#9f5963;--rose-dark:#7d3f4a;--rose-light:#f2e8ea;--sage:#8c9b78;--sage-light:#eaf3de;--mauve:#b8a2a5;--cream:#f7f7f7;--white:#fff;--ink:#2c2320;--ink-mid:#6b5b58;--ink-light:#a89490;--border:#e8ddd9;--gold:#c4a35a;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh;max-width:480px;margin:0 auto;}
+
+/* LOGIN */
+.login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;background:linear-gradient(160deg,var(--rose-dark) 0%,var(--rose) 55%,var(--mauve) 100%);}
+.login-logo-wrap{display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:8px;}
+.login-zhima{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:700;color:#fff;letter-spacing:1px;line-height:1;}
+.login-planners{font-family:'Great Vibes',cursive;font-size:32px;color:rgba(255,255,255,0.9);line-height:1;}
+.login-sub{font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:32px;text-align:center;}
+.login-card{background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:340px;}
+.login-label{font-size:12px;font-weight:700;color:var(--ink-mid);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+.login-card input{width:100%;padding:13px 14px;font-size:16px;border:1.5px solid var(--border);border-radius:12px;outline:none;color:var(--ink);margin-bottom:12px;-webkit-appearance:none;font-family:'Quicksand',sans-serif;}
+.login-card input:focus{border-color:var(--rose);}
+.login-btn{width:100%;padding:14px;background:var(--rose);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Quicksand',sans-serif;margin-top:4px;}
+.login-error{color:var(--rose-dark);font-size:13px;text-align:center;margin-top:10px;background:var(--rose-light);padding:8px;border-radius:8px;display:none;}
+.login-loading{text-align:center;color:rgba(255,255,255,0.8);font-size:13px;margin-top:12px;display:none;}
+
+/* APP */
+.app-screen{display:none;}
+.header{background:linear-gradient(160deg,var(--rose-dark) 0%,var(--rose) 55%,var(--mauve) 100%);padding:20px 16px 16px;text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.06);}
+.header::after{content:'';position:absolute;bottom:-20px;left:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.04);}
+.hlogo-wrap{display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:10px;position:relative;z-index:1;}
+.hzhima{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:#fff;letter-spacing:1px;line-height:1;}
+.hplanners{font-family:'Great Vibes',cursive;font-size:24px;color:rgba(255,255,255,0.9);line-height:1;}
+.hname{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#fff;margin-bottom:3px;position:relative;z-index:1;}
+.hdate{font-size:12px;color:rgba(255,255,255,0.75);margin-bottom:14px;position:relative;z-index:1;}
+.tot-box{background:rgba(255,255,255,0.15);border-radius:12px;padding:12px 16px;border:1px solid rgba(255,255,255,0.2);position:relative;z-index:1;}
+.tot-label{font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.9);margin-bottom:10px;text-align:center;font-weight:600;}
+.tot-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.1);}
+.tot-row:last-child{border-bottom:none;}
+.tot-lbl{font-size:10px;color:rgba(255,255,255,0.65);text-transform:uppercase;letter-spacing:0.8px;}
+.tot-val{font-family:'Quicksand',sans-serif;font-size:18px;font-weight:700;color:#fff;}
+.tot-val.g{color:#a8d98a;}.tot-val.w{color:#ffd97a;}
+.sem-wrap{margin-top:10px;position:relative;z-index:1;}
+.sem-bar{height:5px;background:rgba(255,255,255,0.2);border-radius:10px;overflow:hidden;}
+.sem-fill{height:100%;border-radius:10px;transition:width 0.6s;}
+.sem-fill.red{background:#e87070;}.sem-fill.yellow{background:#e8c870;}.sem-fill.green{background:#8fd47a;}
+.sem-pct{font-size:11px;color:rgba(255,255,255,0.65);margin-top:4px;text-align:right;}
+
+/* TABS */
+.tabs{display:flex;background:var(--white);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:0;z-index:20;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex:0 0 auto;padding:13px 14px;font-size:11px;font-weight:700;color:var(--ink-light);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+.tab.active{color:var(--rose);border-bottom-color:var(--rose);}
+.content{padding:14px 14px 80px;}
+.section{display:none;}.section.active{display:block;}
+
+/* SEARCH */
+.sw{position:relative;margin-bottom:14px;}
+.sw input{width:100%;padding:13px 16px 13px 42px;font-size:15px;border:1.5px solid var(--border);border-radius:12px;background:var(--white);outline:none;color:var(--ink);font-family:'Quicksand',sans-serif;-webkit-appearance:none;}
+.sw input:focus{border-color:var(--rose);}
+.si{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--ink-light);pointer-events:none;}
+
+/* CARDS */
+.card{background:var(--white);border-radius:14px;padding:13px 14px;margin-bottom:8px;border:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:14px 0 0 14px;}
+.card.ok::before{background:var(--sage);}.card.pend::before{background:var(--border);}
+.card.ok{opacity:0.65;}
+.av{width:40px;height:40px;border-radius:50%;background:var(--rose-light);color:var(--rose);font-family:'Cinzel',serif;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-transform:uppercase;}
+.card.ok .av{background:var(--sage-light);color:var(--sage);}
+.ci{flex:1;min-width:0;}
+.cn{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.badges{display:flex;gap:5px;flex-wrap:wrap;}
+.bm{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:#f0ede8;color:var(--ink-mid);}
+.bp{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--sage-light);color:#3b6d11;}
+.bo{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--sage-light);color:#3b6d11;}
+.bpd{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--rose-light);color:var(--rose);}
+.bh{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--cream);color:var(--ink-light);}
+.hint{text-align:center;padding:48px 16px;color:var(--ink-light);font-size:14px;}
+.loading{text-align:center;padding:40px;color:var(--ink-light);}
+.spinner{width:28px;height:28px;border:3px solid var(--rose-light);border-top-color:var(--rose);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* MESAS */
+.mc{background:var(--white);border-radius:14px;margin-bottom:12px;border:1px solid var(--border);overflow:hidden;}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,var(--rose-light),#f7f7f7);border-bottom:1px solid var(--border);}
+.mn{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:var(--rose-dark);}
+.mb{padding:0 16px;}
+.ir{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--cream);cursor:pointer;}
+.ir:last-child{border-bottom:none;}
+.asm{width:32px;height:32px;border-radius:50%;background:var(--rose-light);color:var(--rose);font-family:'Cinzel',serif;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-transform:uppercase;}
+.asm.ok{background:var(--sage-light);color:var(--sage);}
+.inn{font-size:13px;color:var(--ink);flex:1;font-weight:600;}
+.inp{font-size:11px;color:var(--ink-mid);background:var(--cream);padding:2px 7px;border-radius:10px;}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.dok{background:var(--sage);}.dpd{background:var(--border);}
+.mf{padding:10px 16px;background:var(--cream);border-top:1px solid var(--border);display:flex;justify-content:space-between;}
+.mft{font-size:12px;color:var(--ink-mid);font-weight:600;}
+.mfp{font-size:12px;color:var(--sage);font-weight:700;}
+
+/* RESUMEN */
+.rst{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;text-align:center;padding:6px 0;border-bottom:2px solid var(--rose-light);}
+.rg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.rb{background:var(--white);border-radius:14px;padding:16px 12px;text-align:center;border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.rt{font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-light);margin-bottom:6px;font-weight:600;}
+.rn{font-family:'Quicksand',sans-serif;font-size:30px;font-weight:700;color:var(--rose);line-height:1;margin-bottom:4px;}
+.rn.g{color:var(--sage);}.rn.gold{color:var(--gold);}
+.rs{font-size:10px;color:var(--ink-light);}
+.rbf{grid-column:1/-1;flex-direction:row;justify-content:space-between;padding:14px 20px;}
+.rbf .rn{font-size:26px;margin:0;}
+.sbx{background:var(--white);border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:12px;}
+.sbl{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-mid);margin-bottom:10px;font-weight:600;}
+.sbb{height:10px;background:var(--cream);border-radius:10px;overflow:hidden;}
+.sbf{height:100%;border-radius:10px;transition:width 0.6s;}
+.sbf.red{background:linear-gradient(90deg,#e87070,#e8a070);}
+.sbf.yellow{background:linear-gradient(90deg,#e8c870,#c4a35a);}
+.sbf.green{background:linear-gradient(90deg,var(--sage),#6b8f5a);}
+.se{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.sd{width:10px;height:10px;border-radius:50%;}
+.sd.red{background:#e87070;}.sd.yellow{background:#e8c870;}.sd.green{background:#8fd47a;}
+.set{font-size:13px;color:var(--ink-mid);font-weight:500;}
+.rfbtn{width:100%;padding:14px;background:var(--rose);color:#fff;border:none;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Quicksand',sans-serif;margin-bottom:12px;}
+
+/* NOTAS */
+.nc{background:var(--white);border-radius:14px;padding:18px 16px;border:1px solid var(--border);}
+.nt{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--rose);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;}
+.nc textarea{width:100%;min-height:110px;border:1.5px solid var(--border);border-radius:10px;padding:12px;font-family:'Quicksand',sans-serif;font-size:14px;color:var(--ink);resize:vertical;outline:none;background:var(--cream);box-sizing:border-box;}
+.nc textarea:focus{border-color:var(--rose);}
+.nsave{width:100%;margin-top:8px;padding:11px;background:var(--rose);color:#fff;border:none;border-radius:10px;font-family:'Quicksand',sans-serif;font-size:13px;font-weight:700;cursor:pointer;}
+.nconf{display:none;text-align:center;font-size:12px;color:var(--sage);margin-top:8px;font-weight:700;}
+
+/* SCANNER */
+.sccard{background:var(--white);border-radius:14px;padding:18px;border:1px solid var(--border);margin-bottom:12px;}
+.sctit{font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:14px;}
+#video{width:100%;border-radius:12px;background:#000;display:none;max-height:260px;object-fit:cover;}
+.scbtn{width:100%;padding:14px;background:var(--rose);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Quicksand',sans-serif;margin-bottom:10px;}
+.sr{border-radius:12px;padding:14px;display:none;}
+.sr.plain{background:var(--rose-light);}.sr.ok{background:var(--sage-light);}
+.srn{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.srd{font-size:13px;color:var(--ink-mid);margin-bottom:10px;}
+.srpb{background:var(--white);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border:1px solid var(--border);}
+.srpl{font-size:11px;color:var(--ink-mid);text-transform:uppercase;letter-spacing:0.5px;}
+.srpn{font-family:'Quicksand',sans-serif;font-size:26px;font-weight:700;color:var(--sage);}
+.cfbtn{width:100%;padding:13px;background:var(--sage);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Quicksand',sans-serif;}
+.mancard{background:var(--white);border-radius:14px;padding:16px;border:1px solid var(--border);}
+.manlbl{font-size:11px;font-weight:700;color:var(--ink-mid);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;}
+.mancard input{width:100%;padding:12px 14px;font-size:15px;border:1.5px solid var(--border);border-radius:10px;outline:none;font-family:'Quicksand',sans-serif;-webkit-appearance:none;color:var(--ink);}
+.mancard input:focus{border-color:var(--rose);}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(44,35,32,0.6);z-index:100;display:none;align-items:flex-end;justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--white);border-radius:24px 24px 0 0;padding:8px 24px 36px;width:100%;max-width:480px;animation:up 0.25s ease;}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mhdl{width:36px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 18px;}
+.mic{font-size:38px;text-align:center;margin-bottom:10px;}
+.mnam{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--ink);text-align:center;margin-bottom:4px;}
+.minf{font-size:13px;color:var(--ink-mid);text-align:center;margin-bottom:4px;}
+.mpb{background:var(--rose-light);border-radius:12px;padding:14px;text-align:center;margin:14px 0 20px;}
+.mpl{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--rose);margin-bottom:4px;}
+.mpn{font-family:'Quicksand',sans-serif;font-size:42px;font-weight:700;color:var(--rose);line-height:1;}
+.mps{font-size:12px;color:var(--rose);margin-top:2px;}
+.mbtns{display:flex;gap:10px;}
+.mbtns button{flex:1;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Quicksand',sans-serif;}
+.bconf{background:var(--sage);color:#fff;}.bcan{background:var(--rose-light);color:var(--rose);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-logo-wrap">
+    <span class="login-zhima">Zhima</span>
+    <span class="login-planners">Planners</span>
+  </div>
+  <div class="login-sub">Sistema de Check-in de Invitados</div>
+  <div class="login-card">
+    <label class="login-label">ID del Evento</label>
+    <input type="text" id="inputEventoId" placeholder="Ej: 2026EVENT0010" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" />
+    <label class="login-label">Clave del Evento</label>
+    <input type="password" id="inputClave" placeholder="Clave secreta" autocomplete="off" />
+    <button class="login-btn" onclick="iniciarSesion()">Ingresar →</button>
+    <div class="login-error" id="loginError">ID o clave incorrectos. Intenta de nuevo.</div>
+  </div>
+  <div class="login-loading" id="loginLoading">Verificando...</div>
+</div>
+
+<!-- APP -->
+<div id="appScreen" class="app-screen">
+  <div class="header">
+    <div class="hlogo-wrap">
+      <span class="hzhima">Zhima</span>
+      <span class="hplanners">Planners</span>
+    </div>
+    <div class="hname" id="hName">Check-in</div>
+    <div class="hdate" id="hDate"></div>
+    <div class="tot-box">
+      <div class="tot-label">Pases</div>
+      <div class="tot-row"><span class="tot-lbl">Total</span><span class="tot-val" id="hPT">-</span></div>
+      <div class="tot-row"><span class="tot-lbl">Ingresaron</span><span class="tot-val g" id="hPI">-</span></div>
+      <div class="tot-row"><span class="tot-lbl">Pendientes</span><span class="tot-val w" id="hPP">-</span></div>
+    </div>
+    <div class="sem-wrap">
+      <div class="sem-bar"><div class="sem-fill yellow" id="hBar" style="width:0%"></div></div>
+      <div class="sem-pct" id="hPct">0% ingresado</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('scanner',this)">📷 Scanner</button>
+    <button class="tab" onclick="switchTab('buscar',this)">🔍 Buscar</button>
+    <button class="tab" onclick="switchTab('alfa',this)">A-Z</button>
+    <button class="tab" onclick="switchTab('mesas',this)">Mesas</button>
+    <button class="tab" onclick="switchTab('resumen',this)">📊 Resumen</button>
+  </div>
+
+  <div class="content">
+    <div id="sec-scanner" class="section active">
+      <div class="sccard">
+        <div class="sctit">Escanear QR del invitado</div>
+        <video id="video" autoplay playsinline muted></video>
+        <button class="scbtn" id="btnCam" onclick="toggleCam()">Activar cámara</button>
+        <div class="sr plain" id="scanResult" style="display:none">
+          <div class="srn" id="scanName"></div>
+          <div class="srd" id="scanDetail"></div>
+          <div class="srpb"><div class="srpl">Pases asignados</div><div class="srpn" id="scanPases"></div></div>
+          <button class="cfbtn" id="scanConfirm" onclick="confirmarIngreso()"></button>
+        </div>
+      </div>
+      <div class="mancard">
+        <div class="manlbl">Búsqueda por Nombre</div>
+        <input type="text" id="manInput" placeholder="Escribe el nombre del invitado..." oninput="buscarNombre(this.value)" autocomplete="off" autocorrect="off" spellcheck="false" />
+      </div>
+    </div>
+
+    <div id="sec-buscar" class="section">
+      <div class="sw">
+        <svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="qBuscar" placeholder="Escribe el nombre..." oninput="renderBuscar(this.value)" autocomplete="off" autocorrect="off" spellcheck="false" />
+      </div>
+      <div id="listaBuscar"><p class="hint">Escribe un nombre para buscar</p></div>
+    </div>
+
+    <div id="sec-alfa" class="section">
+      <div id="listaAlfa"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+    </div>
+
+    <div id="sec-mesas" class="section">
+      <div id="listaMesas"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+    </div>
+
+    <div id="sec-resumen" class="section">
+      <div class="rst">Pases</div>
+      <div class="rg">
+        <div class="rb"><div class="rt">Total de Pases</div><div class="rn" id="rPT">-</div><div class="rs">pases otorgados</div></div>
+        <div class="rb"><div class="rt">Ingresaron</div><div class="rn g" id="rPI">-</div><div class="rs" id="rPISub">de - totales</div></div>
+        <div class="rb rbf"><div><div class="rt">Pendientes de ingresar</div></div><div class="rn gold" id="rPP">-</div></div>
+      </div>
+      <div class="sbx">
+        <div class="sbl"><span>Progreso del evento</span><span id="rPct">0%</span></div>
+        <div class="sbb"><div class="sbf yellow" id="rBar" style="width:0%"></div></div>
+        <div class="se"><div class="sd yellow" id="rDot"></div><div class="set" id="rEst">Cargando...</div></div>
+      </div>
+      <button class="rfbtn" onclick="cargarDatos()">↺ Actualizar datos en tiempo real</button>
+      <div class="nc">
+        <div class="nt">Notas del evento</div>
+        <textarea id="notasEvento" placeholder="Escribe aquí notas, observaciones o recordatorios..."></textarea>
+        <button class="nsave" onclick="guardarNota()">Guardar nota</button>
+        <div class="nconf" id="nConf">✓ Nota guardada</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="mhdl"></div>
+    <div class="mic">🎉</div>
+    <div class="mnam" id="mNom"></div>
+    <div class="minf" id="mInf"></div>
+    <div class="mpb"><div class="mpl">Pases a registrar</div><div class="mpn" id="mPas"></div><div class="mps">personas ingresan con este QR</div></div>
+    <div class="mbtns">
+      <button class="bcan" onclick="cerrarModal()">Cancelar</button>
+      <button class="bconf" onclick="ejecutarIngreso()">✓ Confirmar ingreso</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwPOlKF30_51Lv4HnQ8GVYKIgs_lJIX57g4J-BlfWeO0vBSo0yjNrfEE3nrPu4qmxiG/exec';
+var invitados = [];
+var invSel = null;
+var eventoIdActual = '';
+var claveActual = '';
+var scanning = false;
+var videoStream = null;
+var scanInterval = null;
+
+// ---- UTILS ----
+function norm(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
+function ini(n){ var p=n.trim().split(/\s+/); return p.length>=2?(p[0][0]+p[1][0]).toUpperCase():n.slice(0,2).toUpperCase(); }
+function set(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+
+// ---- LOGIN ----
+function iniciarSesion(){
+  var eid = document.getElementById('inputEventoId').value.trim().toUpperCase();
+  var clave = document.getElementById('inputClave').value.trim();
+  if(!eid||!clave){ mostrarError('Completa el ID y la clave del evento.'); return; }
+  eventoIdActual = eid; claveActual = clave;
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('loginLoading').style.display='block';
+  document.querySelector('.login-btn').textContent='Verificando...';
+  jsonp(SCRIPT_URL+'?eventoId='+encodeURIComponent(eid)+'&clave='+encodeURIComponent(clave), function(data){
+    document.getElementById('loginLoading').style.display='none';
+    document.querySelector('.login-btn').textContent='Ingresar →';
+    if(data && data.error==='CLAVE_INVALIDA'){ mostrarError('ID o clave incorrectos.'); return; }
+    if(!Array.isArray(data)||data.length===0){ mostrarError('No se encontraron invitados para este evento.'); return; }
+    invitados = data;
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('appScreen').style.display='block';
+    // Set event name from eventoId
+    set('hName','✨ '+eid);
+    renderTodo();
+    // Try load nota
+    try{ var n=localStorage.getItem('zhima_nota_'+eid); if(n) document.getElementById('notasEvento').value=n; }catch(e){}
+  }, function(){ 
+    document.getElementById('loginLoading').style.display='none';
+    document.querySelector('.login-btn').textContent='Ingresar →';
+    mostrarError('Error de conexión. Verifica tu internet.'); 
+  });
+}
+function mostrarError(msg){ var e=document.getElementById('loginError'); e.textContent=msg; e.style.display='block'; }
+document.getElementById('inputClave').addEventListener('keydown',function(e){ if(e.key==='Enter') iniciarSesion(); });
+
+// ---- JSONP ----
+function jsonp(url, onSuccess, onError){
+  var cb='cb_'+Date.now();
+  var s=document.createElement('script');
+  s.src=url+'&callback='+cb+'&t='+Date.now();
+  window[cb]=function(data){ delete window[cb]; document.body.removeChild(s); onSuccess(data); };
+  s.onerror=function(){ delete window[cb]; document.body.removeChild(s); if(onError) onError(); };
+  document.body.appendChild(s);
+}
+
+// ---- LOAD DATA ----
+function cargarDatos(){
+  jsonp(SCRIPT_URL+'?eventoId='+encodeURIComponent(eventoIdActual)+'&clave='+encodeURIComponent(claveActual), function(data){
+    if(Array.isArray(data)){ invitados=data; renderTodo(); }
+  });
+}
+
+// ---- STATS ----
+function calcStats(){
+  var pt=invitados.reduce(function(s,i){return s+(parseInt(i.pases)||1);},0);
+  var pi=invitados.filter(function(i){return i.estado==='INGRESÓ';}).reduce(function(s,i){return s+(parseInt(i.pases)||1);},0);
+  var qr=invitados.length;
+  var qri=invitados.filter(function(i){return i.estado==='INGRESÓ';}).length;
+  var pct=qr?Math.round(qri/qr*100):0;
+  return {pt:pt,pi:pi,pp:pt-pi,qr:qr,qri:qri,pct:pct};
+}
+function sc(p){return p<50?'red':p<80?'yellow':'green';}
+function st(p){return p<50?'En progreso — más de la mitad pendiente':p<80?'Avanzando bien — casi llegamos':'¡Excelente! La mayoría ya ingresó';}
+
+// ---- RENDER ----
+function renderHeader(){
+  var s=calcStats();
+  set('hPT',s.pt); set('hPI',s.pi); set('hPP',s.pp);
+  var b=document.getElementById('hBar');
+  b.style.width=s.pct+'%'; b.className='sem-fill '+sc(s.pct);
+  set('hPct',s.pct+'% ingresado');
+}
+function renderResumen(){
+  var s=calcStats();
+  set('rPT',s.pt); set('rPI',s.pi);
+  set('rPISub','de '+s.pt+' pases totales');
+  set('rPP',s.pp); set('rPct',s.pct+'%');
+  var b=document.getElementById('rBar');
+  b.style.width=s.pct+'%'; b.className='sbf '+sc(s.pct);
+  document.getElementById('rDot').className='sd '+sc(s.pct);
+  set('rEst',st(s.pct));
+}
+function cardHTML(inv){
+  var ok=inv.estado==='INGRESÓ';
+  return '<div class="card '+(ok?'ok':'pend')+'" onclick="abrirModal(\''+inv.id+'\')">'+
+    '<div class="av">' +ini(inv.nombre)+ '</div>'+
+    '<div class="ci"><div class="cn">'+inv.nombre+'</div>'+
+    '<div class="badges">'+
+    '<span class="bm">'+inv.mesa+'</span>'+
+    '<span class="bp">'+inv.pases+' '+(inv.pases==1?'pase':'pases')+'</span>'+
+    (ok?'<span class="bo">✓ Ingresó</span><span class="bh">'+inv.hora+'</span>':'<span class="bpd">Pendiente</span>')+
+    '</div></div></div>';
+}
+function renderBuscar(q){
+  var el=document.getElementById('listaBuscar');
+  q=(q||'').trim();
+  if(!q){el.innerHTML='<p class="hint">Escribe un nombre para buscar</p>';return;}
+  var res=invitados.filter(function(i){return norm(i.nombre).indexOf(norm(q))>=0;});
+  el.innerHTML=res.length?res.map(cardHTML).join(''):'<p class="hint">No se encontró ese nombre</p>';
+}
+function renderAlfa(){
+  var pend=invitados.filter(function(i){return i.estado!=='INGRESÓ';}).sort(function(a,b){return norm(a.nombre).localeCompare(norm(b.nombre));});
+  var ing=invitados.filter(function(i){return i.estado==='INGRESÓ';}).sort(function(a,b){return norm(a.nombre).localeCompare(norm(b.nombre));});
+  document.getElementById('listaAlfa').innerHTML=pend.concat(ing).map(cardHTML).join('');
+}
+function renderMesas(){
+  var mesas={};
+  invitados.forEach(function(i){
+    var m=i.mesa||'Sin mesa';
+    if(!mesas[m])mesas[m]=[];
+    mesas[m].push(i);
+  });
+  var keys=Object.keys(mesas).sort(function(a,b){
+    var na=parseInt(a),nb=parseInt(b);
+    return(!isNaN(na)&&!isNaN(nb))?na-nb:a.localeCompare(b);
+  });
+  var html='';
+  keys.forEach(function(m){
+    var inv=mesas[m];
+    var tp=inv.reduce(function(s,i){return s+(parseInt(i.pases)||1);},0);
+    var pi=inv.filter(function(i){return i.estado==='INGRESÓ';}).reduce(function(s,i){return s+(parseInt(i.pases)||1);},0);
+    html+='<div class="mc"><div class="mh"><span class="mn">'+m+'</span><span class="bp">'+tp+' pases</span></div><div class="mb">';
+    inv.forEach(function(i){
+      var ok=i.estado==='INGRESÓ';
+      html+='<div class="ir" onclick="abrirModal(\''+i.id+'\')">'+
+        '<div class="asm '+(ok?'ok':'')+'">'+ini(i.nombre)+'</div>'+
+        '<span class="inn">'+i.nombre+'</span>'+
+        '<span class="inp">'+i.pases+' '+(i.pases==1?'pase':'pases')+'</span>'+
+        '<div class="dot '+(ok?'dok':'dpd')+'"></div></div>';
+    });
+    html+='</div><div class="mf"><span class="mft">'+inv.length+' '+(inv.length==1?'invitado':'invitados')+'</span>'+
+      '<span class="mfp">'+tp+' pases · '+pi+' ingresaron</span></div></div>';
+  });
+  document.getElementById('listaMesas').innerHTML=html;
+}
+function renderTodo(){
+  renderHeader(); renderResumen(); renderAlfa(); renderMesas();
+  renderBuscar(document.getElementById('qBuscar').value);
+}
+
+// ---- MODAL ----
+function abrirModal(id){
+  var inv=invitados.find(function(i){return i.id===id;});
+  if(!inv)return;
+  if(inv.estado==='INGRESÓ'){alert('✓ '+inv.nombre+' ya ingresó a las '+inv.hora);return;}
+  invSel=inv;
+  set('mNom',inv.nombre); set('mInf',inv.mesa); set('mPas',inv.pases);
+  document.getElementById('modal').classList.add('show');
+}
+function cerrarModal(){document.getElementById('modal').classList.remove('show');invSel=null;}
+function ejecutarIngreso(){
+  if(!invSel)return;
+  var hora=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+  var id=invSel.id;
+  cerrarModal();
+  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,estado:'INGRESÓ',hora:hora})})
+  .then(function(){
+    var inv=invitados.find(function(i){return i.id===id;});
+    if(inv){inv.estado='INGRESÓ';inv.hora=hora;}
+    renderTodo();
+  }).catch(function(){ alert('Error al guardar. Verifica conexión.'); });
+}
+
+// ---- SCANNER ----
+function toggleCam(){
+  if(scanning){detenerCam();}else{iniciarCam();}
+}
+function iniciarCam(){
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+  .then(function(stream){
+    videoStream=stream;
+    var v=document.getElementById('video');
+    v.srcObject=stream; v.style.display='block';
+    scanning=true;
+    document.getElementById('btnCam').textContent='⏹ Detener cámara';
+    document.getElementById('btnCam').style.background='var(--mauve)';
+    iniciarDeteccion();
+  })
+  .catch(function(){alert('No se pudo acceder a la cámara. Usa la búsqueda por nombre.');});
+}
+function detenerCam(){
+  if(videoStream) videoStream.getTracks().forEach(function(t){t.stop();});
+  if(scanInterval) clearInterval(scanInterval);
+  document.getElementById('video').style.display='none';
+  document.getElementById('btnCam').textContent='Activar cámara';
+  document.getElementById('btnCam').style.background='var(--rose)';
+  scanning=false;
+}
+function iniciarDeteccion(){
+  if(!window.BarcodeDetector){
+    mostrarScanResult(null,'QR no detectado automáticamente — usa la búsqueda por nombre abajo','');
+    return;
+  }
+  var detector=new BarcodeDetector({formats:['qr_code']});
+  var v=document.getElementById('video');
+  scanInterval=setInterval(function(){
+    if(!scanning)return;
+    detector.detect(v).then(function(codes){
+      if(codes.length>0) procesarQR(codes[0].rawValue);
+    }).catch(function(){});
+  },600);
+}
+function procesarQR(qrData){
+  var inv=invitados.find(function(i){return i.id===qrData||String(i.dni)===String(qrData)||i.id.includes(qrData);});
+  if(!inv){mostrarScanResult(null,'QR no reconocido: '+qrData,'');return;}
+  invSel=inv;
+  mostrarScanResult(inv,inv.mesa,inv.pases);
+  if(inv.estado!=='INGRESÓ') detenerCam();
+}
+function mostrarScanResult(inv,detalle,pases){
+  var r=document.getElementById('scanResult');
+  r.style.display='block';
+  if(!inv){
+    r.className='sr plain';
+    set('scanName',detalle); set('scanDetail',''); set('scanPases','');
+    document.getElementById('scanConfirm').style.display='none';
+    return;
+  }
+  var ok=inv.estado==='INGRESÓ';
+  r.className='sr '+(ok?'ok':'plain');
+  set('scanName',inv.nombre);
+  set('scanDetail',detalle+(ok?' · ✓ Ya ingresó '+inv.hora:''));
+  set('scanPases',pases);
+  var btn=document.getElementById('scanConfirm');
+  if(ok){btn.style.display='none';}
+  else{btn.style.display='block';btn.textContent='✓ Confirmar ingreso — '+pases+' '+(pases==1?'pase':'pases');}
+}
+function confirmarIngreso(){
+  if(!invSel)return;
+  var hora=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+  var id=invSel.id;
+  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,estado:'INGRESÓ',hora:hora})})
+  .then(function(){
+    var inv=invitados.find(function(i){return i.id===id;});
+    if(inv){inv.estado='INGRESÓ';inv.hora=hora;}
+    document.getElementById('scanResult').style.display='none';
+    invSel=null; renderTodo();
+    setTimeout(iniciarCam,1500);
+  }).catch(function(){alert('Error al guardar.');});
+}
+function buscarNombre(v){
+  if(!v||v.trim().length<2){document.getElementById('scanResult').style.display='none';return;}
+  var res=invitados.filter(function(i){return norm(i.nombre).indexOf(norm(v.trim()))>=0&&i.estado!=='INGRESÓ';});
+  if(res.length){invSel=res[0];mostrarScanResult(res[0],res[0].mesa,res[0].pases);}
+}
+
+// ---- NOTAS ----
+function guardarNota(){
+  var txt=document.getElementById('notasEvento').value.trim();
+  if(!txt)return;
+  try{localStorage.setItem('zhima_nota_'+eventoIdActual,txt);}catch(e){}
+  var c=document.getElementById('nConf');
+  c.style.display='block';
+  setTimeout(function(){c.style.display='none';},2500);
+}
+
+// ---- TABS ----
+function switchTab(id,btn){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('sec-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Auto-refresh resumen cada 30s
+setInterval(function(){
+  if(invitados.length && document.getElementById('sec-resumen').classList.contains('active')){
+    cargarDatos();
+  }
+},30000);
+</script>
+</body>
+</html>
