@@ -164,6 +164,7 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
 .mbtns button{flex:1;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Quicksand',sans-serif;}
 .bconf{background:var(--sage);color:#fff;}.bcan{background:var(--rose-light);color:var(--rose);}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -494,20 +495,25 @@ function procesarFoto(input){
       var ctx=canvas.getContext('2d');
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
       var imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
-      // Load jsQR dynamically
-      if(window.jsQR){
-        var code=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'attemptBoth'});
-        if(code&&code.data){ procesarQR(code.data); }
-        else{ mostrarScanResult(null,'No se detectó ningún QR en la foto. Intenta de nuevo con mejor iluminación.',''); }
+      if(!window.jsQR){
+        mostrarScanResult(null,'Error: librería QR no cargada. Recarga la página.','');
+        return;
+      }
+      // Intentar con diferentes configuraciones
+      var code = jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'attemptBoth'});
+      if(!code){
+        // Intentar con imagen más pequeña
+        var c2=document.createElement('canvas');
+        c2.width=300; c2.height=Math.round(img.height*(300/img.width));
+        var ctx2=c2.getContext('2d');
+        ctx2.drawImage(img,0,0,c2.width,c2.height);
+        var d2=ctx2.getImageData(0,0,c2.width,c2.height);
+        code=jsQR(d2.data,d2.width,d2.height,{inversionAttempts:'attemptBoth'});
+      }
+      if(code&&code.data){
+        procesarQR(code.data);
       } else {
-        var s=document.createElement('script');
-        s.src='https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
-        s.onload=function(){
-          var code=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'attemptBoth'});
-          if(code&&code.data){ procesarQR(code.data); }
-          else{ mostrarScanResult(null,'No se detectó ningún QR. Intenta con mejor iluminación.',''); }
-        };
-        document.head.appendChild(s);
+        mostrarScanResult(null,'No se detectó QR. Asegúrate que el QR esté bien enfocado y con buena luz.','');
       }
     };
     img.src=e.target.result;
@@ -515,8 +521,13 @@ function procesarFoto(input){
   reader.readAsDataURL(file);
 }
 function procesarQR(qrData){
-  var inv=invitados.find(function(i){return i.id===qrData||String(i.dni)===String(qrData)||i.id.includes(qrData);});
-  if(!inv){mostrarScanResult(null,'QR no reconocido: '+qrData,'');return;}
+  qrData = qrData.trim();
+  var inv=invitados.find(function(i){
+    return i.id===qrData || 
+           String(i.dni)===String(qrData) || 
+           i.id.toLowerCase()===qrData.toLowerCase();
+  });
+  if(!inv){mostrarScanResult(null,'QR detectado pero no reconocido: '+qrData,'');return;}
   invSel=inv;
   mostrarScanResult(inv,inv.mesa,inv.pases);
   if(inv.estado!=='INGRESÓ') detenerCam();
