@@ -164,6 +164,7 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
 .mbtns button{flex:1;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Quicksand',sans-serif;}
 .bconf{background:var(--sage);color:#fff;}.bcan{background:var(--rose-light);color:var(--rose);}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -219,6 +220,7 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
       <div class="sccard">
         <div class="sctit">Escanear QR del invitado</div>
         <video id="video" autoplay playsinline muted></video>
+        <canvas id="qrCanvas" style="display:none"></canvas>
         <button class="scbtn" id="btnCam" onclick="toggleCam()">Activar cámara</button>
         <div class="sr plain" id="scanResult" style="display:none">
           <div class="srn" id="scanName"></div>
@@ -345,9 +347,22 @@ function jsonp(url, onSuccess, onError){
 
 // ---- LOAD DATA ----
 function cargarDatos(){
-  jsonp(SCRIPT_URL+'?eventoId='+encodeURIComponent(eventoIdActual)+'&clave='+encodeURIComponent(claveActual), function(data){
-    if(Array.isArray(data)){ invitados=data; renderTodo(); }
-  });
+  var btn=document.querySelector('.rfbtn');
+  if(btn){btn.textContent='Actualizando...';btn.disabled=true;}
+  jsonp(
+    SCRIPT_URL+'?eventoId='+encodeURIComponent(eventoIdActual)+'&clave='+encodeURIComponent(claveActual),
+    function(data){
+      if(btn){btn.textContent='↺ Actualizar datos en tiempo real';btn.disabled=false;}
+      if(Array.isArray(data) && data.length>0){
+        invitados=data;
+        renderTodo();
+      }
+    },
+    function(){
+      if(btn){btn.textContent='↺ Actualizar datos en tiempo real';btn.disabled=false;}
+      alert('Error al actualizar. Verifica tu conexión.');
+    }
+  );
 }
 
 // ---- STATS ----
@@ -466,7 +481,7 @@ function toggleCam(){
   if(scanning){detenerCam();}else{iniciarCam();}
 }
 function iniciarCam(){
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}})
   .then(function(stream){
     videoStream=stream;
     var v=document.getElementById('video');
@@ -480,25 +495,37 @@ function iniciarCam(){
 }
 function detenerCam(){
   if(videoStream) videoStream.getTracks().forEach(function(t){t.stop();});
-  if(scanInterval) clearInterval(scanInterval);
+  if(scanInterval) cancelAnimationFrame(scanInterval);
   document.getElementById('video').style.display='none';
   document.getElementById('btnCam').textContent='Activar cámara';
   document.getElementById('btnCam').style.background='var(--rose)';
   scanning=false;
 }
 function iniciarDeteccion(){
-  if(!window.BarcodeDetector){
-    mostrarScanResult(null,'QR no detectado automáticamente — usa la búsqueda por nombre abajo','');
-    return;
-  }
-  var detector=new BarcodeDetector({formats:['qr_code']});
   var v=document.getElementById('video');
-  scanInterval=setInterval(function(){
+  var canvas=document.getElementById('qrCanvas');
+  var ctx=canvas.getContext('2d');
+  var lastScan=0;
+  function tick(){
     if(!scanning)return;
-    detector.detect(v).then(function(codes){
-      if(codes.length>0) procesarQR(codes[0].rawValue);
-    }).catch(function(){});
-  },600);
+    if(v.readyState===v.HAVE_ENOUGH_DATA){
+      var now=Date.now();
+      if(now-lastScan>500){
+        lastScan=now;
+        canvas.width=v.videoWidth;
+        canvas.height=v.videoHeight;
+        ctx.drawImage(v,0,0,canvas.width,canvas.height);
+        var imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+        var code=jsQR(imgData.data,imgData.width,imgData.height,{inversionAttempts:'dontInvert'});
+        if(code&&code.data){
+          procesarQR(code.data);
+          return;
+        }
+      }
+    }
+    scanInterval=requestAnimationFrame(tick);
+  }
+  scanInterval=requestAnimationFrame(tick);
 }
 function procesarQR(qrData){
   var inv=invitados.find(function(i){return i.id===qrData||String(i.dni)===String(qrData)||i.id.includes(qrData);});
