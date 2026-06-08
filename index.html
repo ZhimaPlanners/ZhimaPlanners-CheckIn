@@ -320,9 +320,10 @@ function iniciarSesion(){
     if(data && data.error==='CLAVE_INVALIDA'){ mostrarError('ID o clave incorrectos.'); return; }
     if(!Array.isArray(data)||data.length===0){ mostrarError('No se encontraron invitados para este evento.'); return; }
     invitados = data;
+    // Guardar login en localStorage para no pedir de nuevo
+    try{ localStorage.setItem('zhima_eid', eid); localStorage.setItem('zhima_clave', clave); }catch(e){}
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('appScreen').style.display='block';
-    // Set event name from eventoId
     set('hName','✨ '+eid);
     renderTodo();
     procesarPendingQR();
@@ -568,6 +569,38 @@ function switchTab(id,btn){
 }
 
 checkURLparams();
+
+// Auto-login si ya hay credenciales guardadas
+(function(){
+  try{
+    var eid = localStorage.getItem('zhima_eid');
+    var clave = localStorage.getItem('zhima_clave');
+    if(eid && clave){
+      eventoIdActual = eid;
+      claveActual = clave;
+      document.getElementById('loginLoading').style.display='block';
+      document.getElementById('loginScreen').style.display='flex';
+      jsonp(SCRIPT_URL+'?eventoId='+encodeURIComponent(eid)+'&clave='+encodeURIComponent(clave), function(data){
+        document.getElementById('loginLoading').style.display='none';
+        if(Array.isArray(data) && data.length>0){
+          invitados = data;
+          document.getElementById('loginScreen').style.display='none';
+          document.getElementById('appScreen').style.display='block';
+          set('hName','✨ '+eid);
+          renderTodo();
+          procesarPendingQR();
+          try{ var n=localStorage.getItem('zhima_nota_'+eid); if(n) document.getElementById('notasEvento').value=n; }catch(e){}
+        } else {
+          // Credenciales inválidas, limpiar y mostrar login
+          try{ localStorage.removeItem('zhima_eid'); localStorage.removeItem('zhima_clave'); }catch(e){}
+          document.getElementById('loginLoading').style.display='none';
+        }
+      }, function(){
+        document.getElementById('loginLoading').style.display='none';
+      });
+    }
+  }catch(e){}
+})();
 
 // Auto-refresh resumen cada 30s
 setInterval(function(){
