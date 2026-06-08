@@ -470,13 +470,13 @@ function ejecutarIngreso(){
   if(!invSel)return;
   var hora=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
   var id=invSel.id;
+  // Actualizar UI al instante sin esperar al servidor
+  var inv=invitados.find(function(i){return i.id===id;});
+  if(inv){inv.estado='INGRESÓ';inv.hora=hora;}
   cerrarModal();
-  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,estado:'INGRESÓ',hora:hora})})
-  .then(function(){
-    var inv=invitados.find(function(i){return i.id===id;});
-    if(inv){inv.estado='INGRESÓ';inv.hora=hora;}
-    renderTodo();
-  }).catch(function(){ alert('Error al guardar. Verifica conexión.'); });
+  renderTodo();
+  // Sincronizar con Sheet en segundo plano
+  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,estado:'INGRESÓ',hora:hora})}).catch(function(){});
 }
 
 // ---- SCANNER via URL params ----
@@ -584,6 +584,7 @@ checkURLparams();
         document.getElementById('loginLoading').style.display='none';
         if(Array.isArray(data) && data.length>0){
           invitados = data;
+          try{ localStorage.setItem('zhima_inv_'+eid, JSON.stringify(data)); }catch(e){}
           document.getElementById('loginScreen').style.display='none';
           document.getElementById('appScreen').style.display='block';
           set('hName','✨ '+eid);
