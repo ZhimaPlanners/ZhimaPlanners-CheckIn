@@ -194,6 +194,7 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
     </div>
     <div class="hname" id="hName">Check-in</div>
     <div class="hdate" id="hDate"></div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:-10px;margin-bottom:14px;position:relative;z-index:1;" id="hEventId"></div>
     <div class="tot-box">
       <div class="tot-label">Pases</div>
       <div class="tot-row"><span class="tot-lbl">Total</span><span class="tot-val" id="hPT">-</span></div>
@@ -207,15 +208,15 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('scanner',this)">📷 Scanner</button>
+    <button class="tab active" onclick="switchTab('alfa',this)">A-Z</button>
     <button class="tab" onclick="switchTab('buscar',this)">🔍 Buscar</button>
-    <button class="tab" onclick="switchTab('alfa',this)">A-Z</button>
+    <button class="tab" onclick="switchTab('scanner',this)">📷 Scanner</button>
     <button class="tab" onclick="switchTab('mesas',this)">Mesas</button>
     <button class="tab" onclick="switchTab('resumen',this)">📊 Resumen</button>
   </div>
 
   <div class="content">
-    <div id="sec-scanner" class="section active">
+    <div id="sec-scanner" class="section">
       <div class="sccard">
         <div class="sctit">Escanear QR del invitado</div>
         <canvas id="qrCanvas" style="display:none"></canvas>
@@ -244,7 +245,7 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
       <div id="listaBuscar"><p class="hint">Escribe un nombre para buscar</p></div>
     </div>
 
-    <div id="sec-alfa" class="section">
+    <div id="sec-alfa" class="section active">
       <div id="listaAlfa"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
     </div>
 
@@ -324,7 +325,8 @@ function iniciarSesion(){
     try{ localStorage.setItem('zhima_eid', eid); localStorage.setItem('zhima_clave', clave); }catch(e){}
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('appScreen').style.display='block';
-    set('hName','✨ '+eid);
+    set('hName', invitados.length > 0 && invitados[0].eventoNombre ? '✨ '+invitados[0].eventoNombre : '✨ '+eid);
+    set('hEventId', eid);
     renderTodo();
     procesarPendingQR();
     // Try load nota
@@ -495,9 +497,9 @@ function procesarPendingQR(){
   // Limpiar URL sin recargar
   window.history.replaceState({}, document.title, window.location.pathname);
   procesarQR(qrId);
-  // Cambiar a pestaña scanner
-  var btn = document.querySelector('.tab');
-  if(btn) switchTab('scanner', btn);
+  // Cambiar a pestaña scanner (3ra pestaña)
+  var tabs = document.querySelectorAll('.tab');
+  if(tabs[2]) switchTab('scanner', tabs[2]);
 }
 function procesarQR(qrData){
   qrData = (qrData||'').trim();
@@ -587,7 +589,8 @@ checkURLparams();
           try{ localStorage.setItem('zhima_inv_'+eid, JSON.stringify(data)); }catch(e){}
           document.getElementById('loginScreen').style.display='none';
           document.getElementById('appScreen').style.display='block';
-          set('hName','✨ '+eid);
+          set('hName', invitados.length > 0 && invitados[0].eventoNombre ? '✨ '+invitados[0].eventoNombre : '✨ '+eid);
+    set('hEventId', eid);
           renderTodo();
           procesarPendingQR();
           try{ var n=localStorage.getItem('zhima_nota_'+eid); if(n) document.getElementById('notasEvento').value=n; }catch(e){}
