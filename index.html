@@ -325,8 +325,10 @@ function iniciarSesion(){
     try{ localStorage.setItem('zhima_eid', eid); localStorage.setItem('zhima_clave', clave); }catch(e){}
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('appScreen').style.display='block';
-    set('hName', invitados.length > 0 && invitados[0].eventoNombre ? '✨ '+invitados[0].eventoNombre : '✨ '+eid);
+    var evNombre = (invitados.length > 0 && invitados[0].eventoNombre && invitados[0].eventoNombre !== eid) ? invitados[0].eventoNombre : '';
+    set('hName', evNombre ? '✨ '+evNombre : '✨ '+eid);
     set('hEventId', eid);
+    if(invitados.length > 0 && invitados[0].eventoFecha) set('hDate', invitados[0].eventoFecha);
     renderTodo();
     procesarPendingQR();
     // Try load nota
@@ -406,7 +408,7 @@ function cardHTML(inv){
     '<div class="av">' +ini(inv.nombre)+ '</div>'+
     '<div class="ci"><div class="cn">'+inv.nombre+'</div>'+
     '<div class="badges">'+
-    '<span class="bm">'+inv.mesa+'</span>'+
+    '<span class="bm">'+(isNaN(parseInt(inv.mesa)) ? inv.mesa : 'Mesa '+inv.mesa)+'</span>'+
     '<span class="bp">'+inv.pases+' '+(inv.pases==1?'pase':'pases')+'</span>'+
     (ok?'<span class="bo">✓ Ingresó</span><span class="bh">'+inv.hora+'</span>':'<span class="bpd">Pendiente</span>')+
     '</div></div></div>';
@@ -589,8 +591,10 @@ checkURLparams();
           try{ localStorage.setItem('zhima_inv_'+eid, JSON.stringify(data)); }catch(e){}
           document.getElementById('loginScreen').style.display='none';
           document.getElementById('appScreen').style.display='block';
-          set('hName', invitados.length > 0 && invitados[0].eventoNombre ? '✨ '+invitados[0].eventoNombre : '✨ '+eid);
+          var evNombre = (invitados.length > 0 && invitados[0].eventoNombre && invitados[0].eventoNombre !== eid) ? invitados[0].eventoNombre : '';
+    set('hName', evNombre ? '✨ '+evNombre : '✨ '+eid);
     set('hEventId', eid);
+    if(invitados.length > 0 && invitados[0].eventoFecha) set('hDate', invitados[0].eventoFecha);
           renderTodo();
           procesarPendingQR();
           try{ var n=localStorage.getItem('zhima_nota_'+eid); if(n) document.getElementById('notasEvento').value=n; }catch(e){}
