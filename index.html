@@ -308,24 +308,10 @@ var videoStream = null;
 var rafId = null;
 var lastScanned = '';
 var lastScannedTime = 0;
-var _audioCtx = null;
-
 function vibrar(tipo){
-  // Android: vibrate API
-  if(navigator.vibrate){
-    if(tipo==='scan') navigator.vibrate([60,30,60]);
-    else navigator.vibrate([80,40,80]);
-  }
-  // iOS: pulso de audio silencioso para activar el taptic engine via AudioContext
-  try{
-    if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-    var osc = _audioCtx.createOscillator();
-    var gain = _audioCtx.createGain();
-    osc.connect(gain); gain.connect(_audioCtx.destination);
-    gain.gain.setValueAtTime(0.001, _audioCtx.currentTime);
-    osc.start(_audioCtx.currentTime);
-    osc.stop(_audioCtx.currentTime + 0.05);
-  }catch(e){}
+  if(!navigator.vibrate) return; // iOS no soporta vibración desde web
+  if(tipo==='scan') navigator.vibrate([60,30,60]);
+  else navigator.vibrate([80,40,80]);
 }
 
 // ---- UTILS ----
@@ -662,22 +648,24 @@ function mostrarScanResult(inv,detalle,pases){
   set('scanPases',pases);
   var btn=document.getElementById('scanConfirm');
   if(ok){btn.style.display='none';}
-  else{btn.style.display='block';btn.textContent='✓ Confirmar ingreso — '+pases+' '+(pases==1?'pase':'pases');}
+  else{btn.style.display='block';btn.disabled=false;btn.style.opacity='1';btn.textContent='✓ Confirmar ingreso — '+pases+' '+(pases==1?'pase':'pases');}
 }
 function confirmarIngreso(){
   if(!invSel)return;
-  // Vibrar al confirmar
   vibrar('confirm');
   var hora=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
   var id=invSel.id;
-  // Feedback visual inmediato en el botón
-  var btn=document.getElementById('scanConfirm');
-  if(btn){btn.textContent='⏳ Procesando...';btn.disabled=true;btn.style.opacity='0.75';}
-  // Actualizar UI al instante sin esperar al servidor
+  // Actualizar UI al instante
   var inv=invitados.find(function(i){return i.id===id;});
   if(inv){inv.estado='INGRESÓ';inv.hora=hora;}
+  // Ocultar resultado y limpiar estado para el siguiente escaneo
   document.getElementById('scanResult').style.display='none';
+  var btn=document.getElementById('scanConfirm');
+  if(btn){btn.disabled=false;btn.style.opacity='1';}
   invSel=null;
+  // Limpiar anti-duplicado para que el siguiente QR se procese de inmediato
+  lastScanned=''; lastScannedTime=0;
+  set('scanStatus','Apunta al QR del invitado');
   renderTodo();
   // Sincronizar con Sheet en segundo plano
   fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,estado:'INGRESÓ',hora:hora})}).catch(function(){});
