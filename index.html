@@ -543,16 +543,14 @@ function iniciarCam(){
 }
 
 function scanLoop(){
-  if(!scanning) return;
-  // Pausar el loop si el panel de resultado está visible — libera el thread para los clicks
+  if(!scanning){ rafId = null; return; }
+  rafId = requestAnimationFrame(scanLoop);
+  // Si el resultado está visible, el loop sigue corriendo pero no procesa — mantiene el RAF activo
   var resultado = document.getElementById('scanResult');
-  if(resultado && resultado.style.display !== 'none'){
-    rafId = setTimeout(function(){ rafId = requestAnimationFrame(scanLoop); }, 300);
-    return;
-  }
+  if(resultado && resultado.style.display !== 'none') return;
   var video = document.getElementById('video');
   var canvas = document.getElementById('qrCanvas');
-  if(video.readyState !== video.HAVE_ENOUGH_DATA){ rafId = requestAnimationFrame(scanLoop); return; }
+  if(video.readyState !== video.HAVE_ENOUGH_DATA) return;
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   var ctx = canvas.getContext('2d');
@@ -576,12 +574,12 @@ function scanLoop(){
       procesarQR(idExtraido);
     }
   }
-  rafId = requestAnimationFrame(scanLoop);
 }
 
 function detenerCam(){
   scanning = false;
   if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  lastScanned=''; lastScannedTime=0;
   if(videoStream){ videoStream.getTracks().forEach(function(t){ t.stop(); }); videoStream = null; }
   var video = document.getElementById('video');
   video.srcObject = null;
