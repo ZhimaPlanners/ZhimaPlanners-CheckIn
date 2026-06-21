@@ -628,7 +628,8 @@ function procesarQR(qrData){
     return;
   }
   invSel=inv;
-  mostrarScanResult(inv,inv.mesa,inv.pases);
+  var mesaLabel = inv.mesa ? (isNaN(parseInt(inv.mesa)) ? inv.mesa : 'Mesa '+inv.mesa) : 'Sin mesa';
+  mostrarScanResult(inv,mesaLabel,inv.pases);
   // cámara sigue activa para el próximo invitado
 }
 function mostrarScanResult(inv,detalle,pases){
@@ -672,7 +673,7 @@ function confirmarIngreso(){
 function buscarNombre(v){
   if(!v||v.trim().length<2){document.getElementById('scanResult').style.display='none';return;}
   var res=invitados.filter(function(i){return norm(i.nombre).indexOf(norm(v.trim()))>=0&&i.estado!=='INGRESÓ';});
-  if(res.length){invSel=res[0];mostrarScanResult(res[0],res[0].mesa,res[0].pases);}
+  if(res.length){invSel=res[0];var ml=res[0].mesa?(isNaN(parseInt(res[0].mesa))?res[0].mesa:'Mesa '+res[0].mesa):'Sin mesa';mostrarScanResult(res[0],ml,res[0].pases);}
 }
 
 // ---- NOTAS ----
