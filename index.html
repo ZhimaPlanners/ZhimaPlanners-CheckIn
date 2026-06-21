@@ -461,7 +461,8 @@ function renderMesas(){
     var inv=mesas[m];
     var tp=inv.reduce(function(s,i){return s+(parseInt(i.pases)||1);},0);
     var pi=inv.filter(function(i){return i.estado==='INGRESÓ';}).reduce(function(s,i){return s+(parseInt(i.pases)||1);},0);
-    html+='<div class="mc"><div class="mh"><span class="mn">'+m+'</span><span class="bp">'+tp+' pases</span></div><div class="mb">';
+    var mLabel=(!isNaN(parseInt(m)))?'Mesa '+m:m;
+    html+='<div class="mc"><div class="mh"><span class="mn">'+mLabel+'</span><span class="bp">'+tp+' pases</span></div><div class="mb">';
     inv.forEach(function(i){
       var ok=i.estado==='INGRESÓ';
       html+='<div class="ir" onclick="abrirModal(\''+i.id+'\')">'+
