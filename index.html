@@ -50,7 +50,7 @@ body{font-family:'Quicksand',sans-serif;background:var(--cream);min-height:100vh
 /* TABS */
 .tabs{display:flex;background:var(--white);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:0;z-index:20;scrollbar-width:none;}
 .tabs::-webkit-scrollbar{display:none;}
-.tab{flex:0 0 auto;padding:13px 14px;font-size:11px;font-weight:700;color:var(--ink-light);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+.tab{flex:1;padding:14px 8px;font-size:12px;font-weight:700;color:var(--ink-light);border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;text-align:center;}
 .tab.active{color:var(--rose);border-bottom-color:var(--rose);}
 .content{padding:14px 14px 80px;}
 .section{display:none;}.section.active{display:block;}
@@ -562,7 +562,7 @@ function scanLoop(){
       } catch(e){}
       set('scanStatus','✓ QR detectado');
       procesarQR(idExtraido);
-      if(navigator.vibrate) navigator.vibrate(100);
+      if(navigator.vibrate) navigator.vibrate([60,30,60]);
       setTimeout(function(){
         if(scanning) set('scanStatus','Apunta al QR del invitado');
       }, 2500);
@@ -644,15 +644,21 @@ function mostrarScanResult(inv,detalle,pases){
 }
 function confirmarIngreso(){
   if(!invSel)return;
+  // Vibrar al confirmar
+  if(navigator.vibrate) navigator.vibrate([80,40,80]);
   var hora=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
   var id=invSel.id;
-  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,estado:'INGRESÓ',hora:hora})})
-  .then(function(){
-    var inv=invitados.find(function(i){return i.id===id;});
-    if(inv){inv.estado='INGRESÓ';inv.hora=hora;}
-    document.getElementById('scanResult').style.display='none';
-    invSel=null; renderTodo();
-  }).catch(function(){alert('Error al guardar.');});
+  // Feedback visual inmediato en el botón
+  var btn=document.getElementById('scanConfirm');
+  if(btn){btn.textContent='⏳ Procesando...';btn.disabled=true;btn.style.opacity='0.75';}
+  // Actualizar UI al instante sin esperar al servidor
+  var inv=invitados.find(function(i){return i.id===id;});
+  if(inv){inv.estado='INGRESÓ';inv.hora=hora;}
+  document.getElementById('scanResult').style.display='none';
+  invSel=null;
+  renderTodo();
+  // Sincronizar con Sheet en segundo plano
+  fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,estado:'INGRESÓ',hora:hora})}).catch(function(){});
 }
 function buscarNombre(v){
   if(!v||v.trim().length<2){document.getElementById('scanResult').style.display='none';return;}
