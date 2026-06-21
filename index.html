@@ -308,6 +308,25 @@ var videoStream = null;
 var rafId = null;
 var lastScanned = '';
 var lastScannedTime = 0;
+var _audioCtx = null;
+
+function vibrar(tipo){
+  // Android: vibrate API
+  if(navigator.vibrate){
+    if(tipo==='scan') navigator.vibrate([60,30,60]);
+    else navigator.vibrate([80,40,80]);
+  }
+  // iOS: pulso de audio silencioso para activar el taptic engine via AudioContext
+  try{
+    if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    var osc = _audioCtx.createOscillator();
+    var gain = _audioCtx.createGain();
+    osc.connect(gain); gain.connect(_audioCtx.destination);
+    gain.gain.setValueAtTime(0.001, _audioCtx.currentTime);
+    osc.start(_audioCtx.currentTime);
+    osc.stop(_audioCtx.currentTime + 0.05);
+  }catch(e){}
+}
 
 // ---- UTILS ----
 function norm(s){ return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
@@ -539,6 +558,12 @@ function iniciarCam(){
 
 function scanLoop(){
   if(!scanning) return;
+  // Pausar el loop si el panel de resultado está visible — libera el thread para los clicks
+  var resultado = document.getElementById('scanResult');
+  if(resultado && resultado.style.display !== 'none'){
+    rafId = setTimeout(function(){ rafId = requestAnimationFrame(scanLoop); }, 300);
+    return;
+  }
   var video = document.getElementById('video');
   var canvas = document.getElementById('qrCanvas');
   if(video.readyState !== video.HAVE_ENOUGH_DATA){ rafId = requestAnimationFrame(scanLoop); return; }
@@ -556,16 +581,13 @@ function scanLoop(){
       lastScannedTime = now;
       var idExtraido = data;
       try {
-        var url = new URL(data);
-        var paramId = url.searchParams.get('id');
+        var u = new URL(data);
+        var paramId = u.searchParams.get('id');
         if(paramId) idExtraido = paramId;
       } catch(e){}
       set('scanStatus','✓ QR detectado');
+      vibrar('scan');
       procesarQR(idExtraido);
-      if(navigator.vibrate) navigator.vibrate([60,30,60]);
-      setTimeout(function(){
-        if(scanning) set('scanStatus','Apunta al QR del invitado');
-      }, 2500);
     }
   }
   rafId = requestAnimationFrame(scanLoop);
@@ -645,7 +667,7 @@ function mostrarScanResult(inv,detalle,pases){
 function confirmarIngreso(){
   if(!invSel)return;
   // Vibrar al confirmar
-  if(navigator.vibrate) navigator.vibrate([80,40,80]);
+  vibrar('confirm');
   var hora=new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
   var id=invSel.id;
   // Feedback visual inmediato en el botón
